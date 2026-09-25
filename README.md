@@ -36,7 +36,7 @@ Or you can download the file directly by clicking the button below.
 
 <div align="center"> 
 <a href="https://raw.githubusercontent.com/mrdarksidetm/Brave-Origin-Unlocker-Windows/main/scripts/unlocker.ps1" download="unlocker.ps1">
-  <img src="assests/images/Download-File.svg" alt="Download Unlocker Script" width="128" />
+  <img src="assests/images/Download-File.svg" alt="Download Unlocker Script" height="128px" />
 </a>
 </div>
 
