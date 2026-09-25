@@ -30,17 +30,8 @@ iex (iwr -Uri "https://raw.githubusercontent.com/mrdarksidetm/Brave-Origin-Unloc
 ```
 It will download and execute the file automatically.
 
-<br>
-
-Or you can download the file directly by clicking the button below.
-
-<div align="center"> 
-<a href="https://raw.githubusercontent.com/mrdarksidetm/Brave-Origin-Unlocker-Windows/main/scripts/unlocker.ps1" download="unlocker.ps1">
-  <img src="assests/images/Download-File.svg" alt="Download Unlocker Script" height="128px" />
-</a>
-</div>
-
-
-
 ## ⚠️ WARNING ⚠️
 <b> The owner and developer of this software provide this script 'as is' without any express or implied warranties. In no event shall the author be held liable for any data loss, corruption, or system disruptions arising from the download, installation, or execution of this script </b>
+
+## License
+© [Abhijeet Yadav](https://github.com/mrdarksidetm) 2026 | Licensed by [MIT License](LICENSE)
