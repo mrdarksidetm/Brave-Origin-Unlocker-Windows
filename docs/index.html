@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Brave Origin Unlocker — Native Windows Automation</title>
+  <meta name="description" content="Automated Brave Origin installer & native PowerShell Local State configuration patcher for Windows 10 & 11." />
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+
+  <!-- Fonts: DM Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --vd-color-bg: #121212;
+      --vd-color-surface: #1e1e1e;
+      --vd-color-surface-elevated: #262626;
+      --vd-color-surface-hover: #2c2c2c;
+      --vd-color-stroke: rgba(255, 255, 255, 0.08);
+      --vd-color-stroke-strong: rgba(255, 255, 255, 0.18);
+      --vd-color-text: rgba(255, 255, 255, 0.88);
+      --vd-color-secondary-text: rgba(255, 255, 255, 0.52);
+      --vd-color-primary: #ff5500;
+      --vd-color-primary-light: #ff7733;
+      --vd-color-primary-container: rgba(255, 85, 0, 0.12);
+      --vd-color-success: #3ddc84;
+      --vd-color-warning: #ffb74d;
+      --vd-color-error: #ef5350;
+      --vd-size-corner-radius: 24px;
+      --vd-size-pill-radius: 9999px;
+      --vd-font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --vd-font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; min-height: 100vh;
+      background-color: var(--vd-color-bg);
+      color: var(--vd-color-text);
+      font-family: var(--vd-font-sans);
+      overflow-x: hidden; -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    .vd-glow-bg {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .vd-glow-blob {
+      position: absolute; top: -100px; left: 30%;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255, 85, 0, 0.09) 0%, rgba(18, 18, 18, 0) 70%);
+      filter: blur(80px);
+    }
+
+    .container {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 1080px;
+      margin: 0 auto; padding: 0 24px;
+      display: flex; flex-direction: column;
+    }
+
+    /* Navbar */
+    header.vd-navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 0; border-bottom: 1px solid var(--vd-color-stroke);
+      margin-bottom: 48px;
+    }
+    .vd-brand { display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; }
+    .vd-brand-logo {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--vd-color-surface-elevated);
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--vd-color-stroke-strong);
+      overflow: hidden;
+    }
+    .vd-brand-logo img { width: 28px; height: 28px; object-fit: contain; }
+    .vd-brand-name { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+    .vd-brand-badge {
+      font-size: 10px; font-weight: 800; font-family: var(--vd-font-mono);
+      background: var(--vd-color-primary-container); color: var(--vd-color-primary);
+      padding: 3px 8px; border-radius: var(--vd-size-pill-radius);
+      border: 1px solid rgba(255, 85, 0, 0.25);
+    }
+
+    .vd-nav-links { display: flex; align-items: center; gap: 16px; }
+    .vd-nav-link {
+      color: var(--vd-color-secondary-text); text-decoration: none;
+      font-size: 14px; font-weight: 600; transition: color 0.2s ease;
+    }
+    .vd-nav-link:hover { color: var(--vd-color-text); }
+
+    /* Buttons */
+    .vd-btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--vd-color-primary); color: #ffffff; font-weight: 700;
+      font-size: 14px; padding: 12px 24px; border-radius: var(--vd-size-pill-radius);
+      text-decoration: none; transition: all 0.2s ease; border: none; cursor: pointer;
+    }
+    .vd-btn-primary:hover { background: var(--vd-color-primary-light); transform: translateY(-1px); }
+
+    .vd-btn-ghost {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--vd-color-surface); color: var(--vd-color-text);
+      font-weight: 600; font-size: 14px; padding: 12px 20px;
+      border-radius: var(--vd-size-pill-radius); text-decoration: none;
+      border: 1px solid var(--vd-color-stroke); transition: all 0.2s ease;
+    }
+    .vd-btn-ghost:hover {
+      background: var(--vd-color-surface-hover);
+      border-color: var(--vd-color-stroke-strong);
+      transform: translateY(-1px);
+    }
+
+    .vd-github-icon { width: 16px; height: 16px; fill: currentColor; }
+
+    /* Hero Section */
+    .vd-hero { margin-bottom: 56px; }
+    .vd-hero-header {
+      display: flex; align-items: center; gap: 20px; margin-bottom: 24px;
+    }
+    .vd-hero-logo {
+      width: 72px; height: 72px; border-radius: 20px;
+      background: var(--vd-color-surface-elevated);
+      border: 1px solid var(--vd-color-stroke-strong);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .vd-hero-logo img { width: 52px; height: 52px; object-fit: contain; }
+    .vd-hero-chip {
+      display: inline-block; font-size: 11px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--vd-color-primary); background: var(--vd-color-primary-container);
+      padding: 4px 12px; border-radius: var(--vd-size-pill-radius);
+      border: 1px solid rgba(255, 85, 0, 0.2); margin-bottom: 8px;
+    }
+    .vd-hero-title {
+      font-size: clamp(32px, 5vw, 48px); font-weight: 800;
+      line-height: 1.15; letter-spacing: -0.03em;
+    }
+    .vd-hero-title span.accent {
+      background: linear-gradient(135deg, #ff5500 0%, #ff884d 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .vd-hero-desc {
+      font-size: 18px; color: var(--vd-color-secondary-text);
+      max-width: 820px; margin-bottom: 32px; line-height: 1.6;
+    }
+
+    /* Terminal / Command Box */
+    .vd-terminal {
+      background: #0d0e11;
+      border: 1px solid var(--vd-color-stroke-strong);
+      border-radius: var(--vd-size-corner-radius);
+      padding: 24px; margin-bottom: 48px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .vd-terminal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .vd-terminal-dots { display: flex; gap: 6px; }
+    .vd-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .vd-dot-red { background: #ff5f56; }
+    .vd-dot-yellow { background: #ffbd2e; }
+    .vd-dot-green { background: #27c93f; }
+    .vd-terminal-title {
+      font-family: var(--vd-font-mono); font-size: 12px;
+      color: var(--vd-color-secondary-text); font-weight: 600;
+    }
+    .vd-admin-badge {
+      font-size: 11px; font-weight: 700; font-family: var(--vd-font-mono);
+      background: rgba(255, 183, 77, 0.15); color: var(--vd-color-warning);
+      padding: 2px 8px; border-radius: var(--vd-size-pill-radius);
+      border: 1px solid rgba(255, 183, 77, 0.3);
+    }
+
+    .vd-code-snippet {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      background: rgba(0, 0, 0, 0.5); border: 1px solid var(--vd-color-stroke);
+      border-radius: 14px; padding: 14px 20px; font-family: var(--vd-font-mono);
+      font-size: 13px; color: #ffffff; cursor: pointer; transition: all 0.2s ease;
+      word-break: break-all;
+    }
+    .vd-code-snippet:hover {
+      border-color: var(--vd-color-primary);
+      background: rgba(255, 85, 0, 0.05);
+    }
+    .vd-code-text {
+      overflow-x: auto; white-space: nowrap; font-size: 13px;
+    }
+    .vd-copy-badge {
+      font-size: 11px; background: var(--vd-color-primary); color: #ffffff;
+      padding: 4px 12px; border-radius: var(--vd-size-pill-radius); font-weight: 700;
+      flex-shrink: 0; transition: background 0.2s ease;
+    }
+
+    .vd-terminal-actions {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 12px; margin-top: 16px;
+    }
+
+    /* Caution Callout */
+    .vd-callout {
+      display: flex; align-items: flex-start; gap: 16px;
+      background: rgba(255, 183, 77, 0.08); border: 1px solid rgba(255, 183, 77, 0.25);
+      border-radius: 16px; padding: 20px; margin-bottom: 48px;
+    }
+    .vd-callout-icon { font-size: 24px; flex-shrink: 0; line-height: 1; }
+    .vd-callout-content { font-size: 14px; line-height: 1.6; }
+    .vd-callout-title { font-weight: 700; color: var(--vd-color-warning); margin-bottom: 4px; }
+    .vd-callout-text { color: var(--vd-color-secondary-text); }
+
+    /* Features Grid */
+    .vd-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px; margin-bottom: 48px;
+    }
+    .vd-feature-card {
+      background: var(--vd-color-surface);
+      border: 1px solid var(--vd-color-stroke);
+      border-radius: var(--vd-size-corner-radius);
+      padding: 28px; transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .vd-feature-card:hover { transform: translateY(-4px); border-color: rgba(255, 85, 0, 0.35); }
+    .vd-feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .vd-feature-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .vd-feature-desc { font-size: 14px; color: var(--vd-color-secondary-text); line-height: 1.6; }
+
+    /* Steps Section */
+    .vd-steps-container {
+      margin-bottom: 48px;
+    }
+    .vd-section-header {
+      margin-bottom: 24px;
+    }
+    .vd-section-title {
+      font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px;
+    }
+    .vd-section-subtitle {
+      font-size: 14px; color: var(--vd-color-secondary-text);
+    }
+    .vd-steps-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;
+    }
+    .vd-step-card {
+      background: var(--vd-color-surface);
+      border: 1px solid var(--vd-color-stroke);
+      border-radius: 20px; padding: 24px;
+      position: relative;
+    }
+    .vd-step-number {
+      font-family: var(--vd-font-mono); font-size: 12px; font-weight: 800;
+      color: var(--vd-color-primary); background: var(--vd-color-primary-container);
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px; border: 1px solid rgba(255, 85, 0, 0.3);
+    }
+    .vd-step-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .vd-step-desc { font-size: 13px; color: var(--vd-color-secondary-text); line-height: 1.5; }
+
+    /* Specs Card */
+    .vd-specs-card {
+      background: var(--vd-color-surface);
+      border: 1px solid var(--vd-color-stroke);
+      border-radius: var(--vd-size-corner-radius);
+      padding: 32px; margin-bottom: 56px;
+    }
+    .vd-specs-title {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 20px;
+    }
+    .vd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .vd-table tr { border-bottom: 1px solid var(--vd-color-stroke); }
+    .vd-table tr:last-child { border-bottom: none; }
+    .vd-table th {
+      text-align: left; padding: 14px 0; color: var(--vd-color-secondary-text);
+      font-weight: 600; width: 30%;
+    }
+    .vd-table td {
+      padding: 14px 0; color: var(--vd-color-text); font-weight: 600;
+      font-family: var(--vd-font-mono); font-size: 13px;
+    }
+
+    /* Footer */
+    footer.vd-footer {
+      border-top: 1px solid var(--vd-color-stroke);
+      padding: 40px 0 60px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      color: var(--vd-color-secondary-text); font-size: 13px; text-align: center;
+    }
+    .vd-footer-links { display: flex; gap: 20px; }
+    .vd-footer-link {
+      color: var(--vd-color-secondary-text); text-decoration: none;
+      font-weight: 600; transition: color 0.2s ease;
+    }
+    .vd-footer-link:hover { color: var(--vd-color-text); }
+
+    @media (max-width: 640px) {
+      .vd-hero-header { flex-direction: column; align-items: flex-start; }
+      .vd-terminal-actions { flex-direction: column; width: 100%; }
+      .vd-btn-ghost, .vd-btn-primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="vd-glow-bg"><div class="vd-glow-blob"></div></div>
+
+  <div class="container">
+    <!-- Navbar -->
+    <header class="vd-navbar">
+      <a href="https://mrdarksidetm.github.io/" class="vd-brand">
+        <div class="vd-brand-logo">
+          <img src="logo.svg" alt="Brave Origin Unlocker Logo" />
+        </div>
+        <div class="vd-brand-name">Brave Origin Unlocker</div>
+        <span class="vd-brand-badge">WINDOWS</span>
+      </a>
+      <nav class="vd-nav-links">
+        <a href="https://mrdarksidetm.github.io/" class="vd-nav-link">← Atelier Hub</a>
+        <a href="https://github.com/mrdarksidetm/Brave-Origin-Unlocker-Windows" target="_blank" rel="noopener noreferrer" class="vd-btn-ghost">
+          <svg class="vd-github-icon" viewBox="0 0 24 24"><path d="m12 .5c-6.63 0-12 5.28-12 11.792 0 5.211 3.438 9.63 8.205 11.188.6.111.82-.254.82-.567 0-.28-.01-1.022-.015-2.005-3.338.711-4.042-1.582-4.042-1.582-.546-1.361-1.335-1.725-1.335-1.725-1.087-.731.084-.716.084-.716 1.205.082 1.838 1.215 1.838 1.215 1.07 1.803 2.809 1.282 3.495.981.108-.763.417-1.282.76-1.577-2.665-.295-5.466-1.309-5.466-5.827 0-1.287.465-2.339 1.235-3.164-.135-.298-.54-1.497.105-3.121 0 0 1.005-.316 3.3 1.209.96-.262 1.98-.392 3-.398 1.02.006 2.04.136 3 .398 2.28-1.525 3.285-1.209 3.285-1.209.645 1.624.24 2.823.12 3.121.765.825 1.23 1.877 1.23 3.164 0 4.53-2.805 5.527-5.475 5.817.42.354.81 1.077.81 2.182 0 1.578-.015 2.846-.015 3.229 0 .309.21.678.825.56 4.801-1.548 8.236-5.97 8.236-11.173 0-6.512-5.373-11.792-12-11.792z"/></svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="vd-hero">
+      <div class="vd-hero-header">
+        <div class="vd-hero-logo">
+          <img src="logo.svg" alt="Brave Origin Unlocker Logo" />
+        </div>
+        <div>
+          <div class="vd-hero-chip">🛡️ Windows 11 & 10 • Native PowerShell Automation</div>
+          <h1 class="vd-hero-title">
+            Unlock Brave Origin with <span class="accent">Zero Subscription</span> Prompts.
+          </h1>
+        </div>
+      </div>
+      <p class="vd-hero-desc">
+        As Brave Origin stores purchase validation state locally on Windows, this PowerShell script modifies the exact local configuration files natively to satisfy the client verification logic. 100% offline-friendly, zero external binary dependencies, and instant execution.
+      </p>
+
+      <!-- Terminal Quick Run Box -->
+      <div class="vd-terminal">
+        <div class="vd-terminal-header">
+          <div class="vd-terminal-dots">
+            <span class="vd-dot vd-dot-red"></span>
+            <span class="vd-dot vd-dot-yellow"></span>
+            <span class="vd-dot vd-dot-green"></span>
+          </div>
+          <span class="vd-terminal-title">PowerShell (Administrator)</span>
+          <span class="vd-admin-badge">Admin Privileges Required</span>
+        </div>
+
+        <div class="vd-code-snippet" id="psSnippet" onclick="copyCommand()">
+          <span class="vd-code-text" id="cmdText">iex (iwr -Uri "https://raw.githubusercontent.com/mrdarksidetm/Brave-Origin-Unlocker-Windows/main/scripts/unlocker.ps1" -UseBasicParsing).Content</span>
+          <span class="vd-copy-badge" id="psCopyBadge">Copy Command</span>
+        </div>
+
+        <div class="vd-terminal-actions">
+          <a href="https://raw.githubusercontent.com/mrdarksidetm/Brave-Origin-Unlocker-Windows/main/scripts/unlocker.ps1" download="unlocker.ps1" class="vd-btn-ghost">
+            ↓ Download unlocker.ps1
+          </a>
+          <button class="vd-btn-primary" onclick="copyCommand()">
+            Copy PowerShell Command
+          </button>
+        </div>
+      </div>
+
+      <!-- Caution Callout -->
+      <div class="vd-callout">
+        <div class="vd-callout-icon">⚠️</div>
+        <div class="vd-callout-content">
+          <div class="vd-callout-title">Upstream Notice & Caution</div>
+          <div class="vd-callout-text">
+            Brave Origin can adjust its architecture at any time and shift configuration checks entirely server-side or to cloud account credentials. This script is provided for research and educational purposes without warranties.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Execution Steps -->
+    <div class="vd-steps-container">
+      <div class="vd-section-header">
+        <h2 class="vd-section-title">Quick 3-Step Setup</h2>
+        <p class="vd-section-subtitle">No compilation or manual file moving required.</p>
+      </div>
+      <div class="vd-steps-grid">
+        <div class="vd-step-card">
+          <div class="vd-step-number">1</div>
+          <div class="vd-step-title">Open Terminal as Admin</div>
+          <div class="vd-step-desc">Launch Windows Terminal, PowerShell 5.1, or PowerShell 7 with Run as Administrator permissions.</div>
+        </div>
+        <div class="vd-step-card">
+          <div class="vd-step-number">2</div>
+          <div class="vd-step-title">Paste & Run Script</div>
+          <div class="vd-step-desc">Paste the one-liner command. The script downloads official Brave Origin if needed, then patches your Local State.</div>
+        </div>
+        <div class="vd-step-card">
+          <div class="vd-step-number">3</div>
+          <div class="vd-step-title">Launch Brave Origin</div>
+          <div class="vd-step-desc">Open Brave Origin from Start Menu or desktop shortcut. The purchase validation modal will no longer appear.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="vd-grid">
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">⚡</div>
+        <div class="vd-feature-title">Automated Installation</div>
+        <div class="vd-feature-desc">Fetches the latest official Brave Origin x64 release directly from laptop-updates.brave.com and automates the installer if not installed.</div>
+      </div>
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">🔓</div>
+        <div class="vd-feature-title">Multi-Channel Support</div>
+        <div class="vd-feature-desc">Patches configurations across standard Brave-Origin, Brave-Origin-Beta, and Brave-Origin-Nightly simultaneously.</div>
+      </div>
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">🛡️</div>
+        <div class="vd-feature-title">100% Native PowerShell</div>
+        <div class="vd-feature-desc">No external Node.js, Python, or untrusted binary executables. Everything runs transparently within standard PowerShell.</div>
+      </div>
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">🔒</div>
+        <div class="vd-feature-title">Local State JSON Patching</div>
+        <div class="vd-feature-desc">Gracefully loads, parses, and injects purchase validation state into the browser's AppData Local State files with zero corruption.</div>
+      </div>
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">🔄</div>
+        <div class="vd-feature-title">Safe Process Management</div>
+        <div class="vd-feature-desc">Automatically terminates active background Brave processes prior to patching to prevent file locking and JSON collision issues.</div>
+      </div>
+      <div class="vd-feature-card">
+        <div class="vd-feature-icon">🧹</div>
+        <div class="vd-feature-title">Zero Bloat & Zero Telemetry</div>
+        <div class="vd-feature-desc">Zero tracking, zero analytics, zero registry modifications outside of the standard browser configuration directory.</div>
+      </div>
+    </div>
+
+    <!-- Specifications Table -->
+    <div class="vd-specs-card">
+      <div class="vd-specs-title">Technical Specifications</div>
+      <table class="vd-table">
+        <tr><th>Platform</th><td>Windows 10 / Windows 11 (x64)</td></tr>
+        <tr><th>Runtime Environment</th><td>Windows PowerShell 5.1+ / PowerShell 7+</td></tr>
+        <tr><th>Target Channels</th><td>Brave-Origin, Brave-Origin-Beta, Brave-Origin-Nightly</td></tr>
+        <tr><th>Target Path</th><td>%LOCALAPPDATA%\BraveSoftware\&lt;Channel&gt;\User Data\Local State</td></tr>
+        <tr><th>License</th><td>MIT License (Open Source)</td></tr>
+        <tr><th>CI/CD Pipeline</th><td>GitHub Actions (PowerShell Syntax Check & PSScriptAnalyzer)</td></tr>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <footer class="vd-footer">
+      <div>
+        © 2026 Abhijeet Yadav (<a href="https://github.com/mrdarksidetm" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none; font-weight: 700;">MrDarksideTM</a>). Built under the Atelier software forge.
+      </div>
+      <div class="vd-footer-links">
+        <a href="https://mrdarksidetm.github.io/" class="vd-footer-link">Atelier Hub</a>
+        <a href="https://github.com/mrdarksidetm/Brave-Origin-Unlocker-Windows" target="_blank" rel="noopener noreferrer" class="vd-footer-link">GitHub Repository</a>
+        <a href="https://github.com/mrdarksidetm/Brave-Origin-Unlocker-Windows/issues" target="_blank" rel="noopener noreferrer" class="vd-footer-link">Report Issue</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function copyCommand() {
+      const cmd = document.getElementById('cmdText').innerText.trim();
+      navigator.clipboard.writeText(cmd).then(() => {
+        const badge = document.getElementById('psCopyBadge');
+        badge.innerText = 'Copied! ✓';
+        badge.style.background = 'var(--vd-color-success)';
+        setTimeout(() => {
+          badge.innerText = 'Copy Command';
+          badge.style.background = 'var(--vd-color-primary)';
+        }, 2500);
+      });
+    }
+  </script>
+</body>
+</html>
