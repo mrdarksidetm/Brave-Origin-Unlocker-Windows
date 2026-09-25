@@ -1,0 +1,41 @@
+name: Validate PowerShell Script
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Lint & Syntax Check
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell Script Syntax
+        shell: pwsh
+        run: |
+          Write-Host "Checking PowerShell syntax for ./scripts/unlocker.ps1..."
+          $errors = $null
+          $content = Get-Content -Raw ./scripts/unlocker.ps1
+          [System.Management.Automation.Language.Parser]::ParseInput($content, [ref]$null, [ref]$errors)
+          if ($errors) {
+            $errors | Format-Table -AutoSize
+            throw "Syntax error(s) found in scripts/unlocker.ps1"
+          }
+          Write-Host "Syntax validation passed!" -ForegroundColor Green
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Write-Host "Running PSScriptAnalyzer..."
+          $results = Invoke-ScriptAnalyzer -Path ./scripts/unlocker.ps1 -Severity Error
+          if ($results) {
+            $results | Format-Table -AutoSize
+            throw "PSScriptAnalyzer found blocking errors."
+          }
+          Write-Host "PSScriptAnalyzer validation passed!" -ForegroundColor Green
